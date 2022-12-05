@@ -171,7 +171,7 @@ public class BigQueryToBigtable {
           .withConfiguration(BigtableOptionsFactory.BIGTABLE_BUFFERED_MUTATOR_THROTTLING_THRESHOLD_MILLIS, options.getBigtableLatencyMsTarget())
           .withConfiguration(BigtableOptionsFactory.BIGTABLE_BULK_MAX_ROW_KEY_COUNT, options.getBigtableMaxRowKeyCount())
           .withConfiguration(BigtableOptionsFactory.BIGTABLE_BULK_MAX_REQUEST_SIZE_BYTES, options.getBigtableBulkMaxRequestSizeBytes());
-          // Do I need to add BigtableOptionsFactory.BIGTABLE
+          // Do I need to add BigtableOptionsFactory.BIGTABLE_BULK_AUTOFLUSH_MS_KEY
     }
     CloudBigtableTableConfiguration bigtableTableConfig = builderBigtableTableConfig.build();
 
