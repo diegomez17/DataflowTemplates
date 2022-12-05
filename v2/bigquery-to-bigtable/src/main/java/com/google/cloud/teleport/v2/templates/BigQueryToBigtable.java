@@ -17,6 +17,7 @@ package com.google.cloud.teleport.v2.templates;
 
 import com.google.cloud.bigtable.beam.CloudBigtableIO;
 import com.google.cloud.bigtable.beam.CloudBigtableTableConfiguration;
+import com.google.cloud.bigtable.hbase.BigtableOptionsFactory;
 import com.google.cloud.teleport.metadata.Template;
 import com.google.cloud.teleport.metadata.TemplateCategory;
 import com.google.cloud.teleport.metadata.TemplateParameter;
@@ -116,6 +117,36 @@ public class BigQueryToBigtable {
     String getBigtableWriteColumnFamily();
 
     void setBigtableWriteColumnFamily(String value);
+
+    @TemplateParameter.Text(
+        order = 10,
+        optional = true,
+        description = "Bigtable's latency target in milliseconds",
+        helpText = "This enables latency-based throttling and specifies the target latency")
+    @Required
+    String getBigtableLatencyMsTarget();
+
+    void setBigtableMsLatencyTarget(String value);
+
+    @TemplateParameter.Text(
+        order = 10,
+        optional = true,
+        description = "Bigtable's max amount of row keys in a batch",
+        helpText = "This sets the amount of keys can be within a specific batch")
+    @Required
+    String getBigtableMaxRowKeyCount(); // fix naming
+
+    void setBigtableMaxRowKeyCount(String value);
+
+    @TemplateParameter.Text(
+        order = 11,
+        optional = true,
+        description = "",
+        helpText = "" /* Fill out if flags are correct*/)
+    @Required
+    String getBigtableBulkMaxRequestSizeBytes();
+
+    void setBigtableBulkMaxRequestSizeBytes(String value);
   }
 
   /**
@@ -127,13 +158,23 @@ public class BigQueryToBigtable {
 
     BigQueryToBigtableOptions options =
         PipelineOptionsFactory.fromArgs(args).withValidation().as(BigQueryToBigtableOptions.class);
-    CloudBigtableTableConfiguration bigtableTableConfig =
+    CloudBigtableTableConfiguration.Builder builderBigtableTableConfig =
         new CloudBigtableTableConfiguration.Builder()
             .withProjectId(options.getBigtableWriteProjectId())
             .withInstanceId(options.getBigtableWriteInstanceId())
             .withAppProfileId(options.getBigtableWriteAppProfile())
-            .withTableId(options.getBigtableWriteTableId())
-            .build();
+            .withTableId(options.getBigtableWriteTableId());
+
+    if (options.getBigtableLatencyMsTarget() != null) {
+      builderBigtableTableConfig // I need to confirm which BigtableOptions are right here
+          .withConfiguration(BigtableOptionsFactory.BIGTABLE_BUFFERED_MUTATOR_ENABLE_THROTTLING, "true")
+          .withConfiguration(BigtableOptionsFactory.BIGTABLE_BUFFERED_MUTATOR_THROTTLING_THRESHOLD_MILLIS, options.getBigtableLatencyMsTarget())
+          .withConfiguration(BigtableOptionsFactory.BIGTABLE_BULK_MAX_ROW_KEY_COUNT, options.getBigtableMaxRowKeyCount())
+          .withConfiguration(BigtableOptionsFactory.BIGTABLE_BULK_MAX_REQUEST_SIZE_BYTES, options.getBigtableBulkMaxRequestSizeBytes());
+          // Do I need to add BigtableOptionsFactory.BIGTABLE
+    }
+    CloudBigtableTableConfiguration bigtableTableConfig = builderBigtableTableConfig.build();
+
 
     Pipeline pipeline = Pipeline.create(options);
 
