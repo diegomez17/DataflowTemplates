@@ -121,7 +121,7 @@ public class BigQueryToBigtable {
     @TemplateParameter.Text(
         order = 10,
         optional = true,
-        description = "Bigtable's latency target in milliseconds",
+        description = "Bigtable's latency target in milliseconds for latency-based throttling",
         helpText = "This enables latency-based throttling and specifies the target latency")
     @Required
     String getBigtableLatencyMsTarget();
@@ -131,8 +131,8 @@ public class BigQueryToBigtable {
     @TemplateParameter.Text(
         order = 10,
         optional = true,
-        description = "Bigtable's max amount of row keys in a batch",
-        helpText = "This sets the amount of keys can be within a specific batch")
+        description = "The max amount of row keys in a Bigtable batch",
+        helpText = "This sets the amount of keys that can be within a specific batch")
     @Required
     String getBigtableMaxRowKeyCount(); // fix naming
 
@@ -141,8 +141,8 @@ public class BigQueryToBigtable {
     @TemplateParameter.Text(
         order = 11,
         optional = true,
-        description = "",
-        helpText = "" /* Fill out if flags are correct*/)
+        description = "The max amount of bytes for a Bigtable batch",
+        helpText = "This sets the amount of bytes allowed in a batch before sending a request")
     @Required
     String getBigtableBulkMaxRequestSizeBytes();
 
