@@ -125,7 +125,7 @@ public class BigQueryToBigtable {
         helpText = "This enables latency-based throttling and specifies the target latency")
     String getBigtableLatencyMsTarget();
 
-    void setBigtableMsLatencyTarget(String value);
+    void setBigtableLatencyMsTarget(String value);
 
     @TemplateParameter.Text(
         order = 10,
@@ -183,7 +183,7 @@ public class BigQueryToBigtable {
     if (options.getBigtableLatencyMsTarget() != null) {
       builderBigtableTableConfig
           .withConfiguration(BigtableOptionsFactory.BIGTABLE_BUFFERED_MUTATOR_ENABLE_THROTTLING, "true")
-          .withConfiguration(BigtableOptionsFactory.BIGTABLE_BUFFERED_MUTATOR_THROTTLING_THRESHOLD_MILLIS, options.getBigtableLatencyMsTarget())
+          .withConfiguration(BigtableOptionsFactory.BIGTABLE_BUFFERED_MUTATOR_THROTTLING_THRESHOLD_MILLIS, options.getBigtableLatencyMsTarget());
     }
     if (options.getBigtableMaxRowKeyCount() != null) {
       builderBigtableTableConfig.withConfiguration(BigtableOptionsFactory.BIGTABLE_BULK_MAX_ROW_KEY_COUNT, options.getBigtableMaxRowKeyCount());
@@ -191,7 +191,6 @@ public class BigQueryToBigtable {
     if (options.getBigtableBulkMaxRequestSizeBytes() != null) {
       builderBigtableTableConfig.withConfiguration(BigtableOptionsFactory.BIGTABLE_BULK_MAX_REQUEST_SIZE_BYTES, options.getBigtableBulkMaxRequestSizeBytes());
     }
-    // Do I need to set BigtableOptionsFactory.USE_TIMEOUTS?
     if (options.getBigtableRpcOperationTimeout() != null) {
       builderBigtableTableConfig.withConfiguration(BigtableOptionsFactory.BIGTABLE_RPC_TIMEOUT_MS_KEY,
           options.getBigtableRpcOperationTimeout());
