@@ -119,11 +119,10 @@ public class BigQueryToBigtable {
     void setBigtableWriteColumnFamily(String value);
 
     @TemplateParameter.Text(
-        order = 10,
+        order = 9,
         optional = true,
         description = "Bigtable's latency target in milliseconds for latency-based throttling",
         helpText = "This enables latency-based throttling and specifies the target latency")
-    @Required
     String getBigtableLatencyMsTarget();
 
     void setBigtableMsLatencyTarget(String value);
@@ -133,7 +132,6 @@ public class BigQueryToBigtable {
         optional = true,
         description = "The max amount of row keys in a Bigtable batch",
         helpText = "This sets the amount of keys that can be within a specific batch")
-    @Required
     String getBigtableMaxRowKeyCount(); // fix naming
 
     void setBigtableMaxRowKeyCount(String value);
@@ -143,10 +141,27 @@ public class BigQueryToBigtable {
         optional = true,
         description = "The max amount of bytes for a Bigtable batch",
         helpText = "This sets the amount of bytes allowed in a batch before sending a request")
-    @Required
     String getBigtableBulkMaxRequestSizeBytes();
 
     void setBigtableBulkMaxRequestSizeBytes(String value);
+
+    @TemplateParameter.Text(
+        order = 12,
+        optional = true,
+        description = "The Bigtable attempt timeout for an RPC",
+        helpText = "How many milliseconds will pass before retrying the same RPC")
+    String getBigtableRpcAttemptTimeout();
+
+    void setBigtableRpcAttemptTimeout(String value);
+
+    @TemplateParameter.Text(
+        order = 13,
+        optional = true,
+        description = "The Bigtable total timeout for an RPC",
+        helpText = "How many milliseconds will pass before a DEADLINE_EXCEEDED on the total operation")
+    String getBigtableRpcOperationTimeout();
+
+    void setBigtableRpcOperationTimeout(String value);
   }
 
   /**
@@ -166,12 +181,24 @@ public class BigQueryToBigtable {
             .withTableId(options.getBigtableWriteTableId());
 
     if (options.getBigtableLatencyMsTarget() != null) {
-      builderBigtableTableConfig // I need to confirm which BigtableOptions are right here
+      builderBigtableTableConfig
           .withConfiguration(BigtableOptionsFactory.BIGTABLE_BUFFERED_MUTATOR_ENABLE_THROTTLING, "true")
           .withConfiguration(BigtableOptionsFactory.BIGTABLE_BUFFERED_MUTATOR_THROTTLING_THRESHOLD_MILLIS, options.getBigtableLatencyMsTarget())
-          .withConfiguration(BigtableOptionsFactory.BIGTABLE_BULK_MAX_ROW_KEY_COUNT, options.getBigtableMaxRowKeyCount())
-          .withConfiguration(BigtableOptionsFactory.BIGTABLE_BULK_MAX_REQUEST_SIZE_BYTES, options.getBigtableBulkMaxRequestSizeBytes());
-          // Do I need to add BigtableOptionsFactory.BIGTABLE_BULK_AUTOFLUSH_MS_KEY
+    }
+    if (options.getBigtableMaxRowKeyCount() != null) {
+      builderBigtableTableConfig.withConfiguration(BigtableOptionsFactory.BIGTABLE_BULK_MAX_ROW_KEY_COUNT, options.getBigtableMaxRowKeyCount());
+    }
+    if (options.getBigtableBulkMaxRequestSizeBytes() != null) {
+      builderBigtableTableConfig.withConfiguration(BigtableOptionsFactory.BIGTABLE_BULK_MAX_REQUEST_SIZE_BYTES, options.getBigtableBulkMaxRequestSizeBytes());
+    }
+    // Do I need to set BigtableOptionsFactory.USE_TIMEOUTS?
+    if (options.getBigtableRpcOperationTimeout() != null) {
+      builderBigtableTableConfig.withConfiguration(BigtableOptionsFactory.BIGTABLE_RPC_TIMEOUT_MS_KEY,
+          options.getBigtableRpcOperationTimeout());
+    }
+    if (options.getBigtableRpcAttemptTimeout() != null) {
+      builderBigtableTableConfig.withConfiguration(BigtableOptionsFactory.BIGTABLE_RPC_ATTEMPT_TIMEOUT_MS_KEY,
+          options.getBigtableRpcAttemptTimeout());
     }
     CloudBigtableTableConfiguration bigtableTableConfig = builderBigtableTableConfig.build();
 
