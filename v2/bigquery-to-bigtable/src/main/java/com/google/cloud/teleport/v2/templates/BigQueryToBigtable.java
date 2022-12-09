@@ -178,6 +178,8 @@ public class BigQueryToBigtable {
             .withProjectId(options.getBigtableWriteProjectId())
             .withInstanceId(options.getBigtableWriteInstanceId())
             .withAppProfileId(options.getBigtableWriteAppProfile())
+            .withConfiguration(BigtableOptionsFactory.INITIAL_ELAPSED_BACKOFF_MILLIS_KEY, "100")
+            .withConfiguration(BigtableOptionsFactory.MAX_ELAPSED_BACKOFF_MILLIS_KEY, "600000")
             .withTableId(options.getBigtableWriteTableId());
 
     if (options.getBigtableLatencyMsTarget() != null) {
