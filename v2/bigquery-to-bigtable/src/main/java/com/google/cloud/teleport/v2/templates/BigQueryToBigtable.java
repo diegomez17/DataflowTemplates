@@ -17,6 +17,7 @@ package com.google.cloud.teleport.v2.templates;
 
 import com.google.cloud.bigtable.beam.CloudBigtableIO;
 import com.google.cloud.bigtable.beam.CloudBigtableTableConfiguration;
+import com.google.cloud.bigtable.hbase.BigtableOptionsFactory;
 import com.google.cloud.teleport.metadata.Template;
 import com.google.cloud.teleport.metadata.TemplateCategory;
 import com.google.cloud.teleport.metadata.TemplateParameter;
@@ -116,6 +117,51 @@ public class BigQueryToBigtable {
     String getBigtableWriteColumnFamily();
 
     void setBigtableWriteColumnFamily(String value);
+
+    @TemplateParameter.Text(
+        order = 9,
+        optional = true,
+        description = "Bigtable's latency target in milliseconds for latency-based throttling",
+        helpText = "This enables latency-based throttling and specifies the target latency")
+    String getBigtableLatencyMsTarget();
+
+    void setBigtableLatencyMsTarget(String value);
+
+    @TemplateParameter.Text(
+        order = 10,
+        optional = true,
+        description = "The max amount of row keys in a Bigtable batch",
+        helpText = "This sets the amount of keys that can be within a specific batch")
+    String getBigtableMaxRowKeyCount(); // fix naming
+
+    void setBigtableMaxRowKeyCount(String value);
+
+    @TemplateParameter.Text(
+        order = 11,
+        optional = true,
+        description = "The max amount of bytes for a Bigtable batch",
+        helpText = "This sets the amount of bytes allowed in a batch before sending a request")
+    String getBigtableBulkMaxRequestSizeBytes();
+
+    void setBigtableBulkMaxRequestSizeBytes(String value);
+
+    @TemplateParameter.Text(
+        order = 12,
+        optional = true,
+        description = "The Bigtable attempt timeout for an RPC",
+        helpText = "How many milliseconds will pass before retrying the same RPC")
+    String getBigtableRpcAttemptTimeout();
+
+    void setBigtableRpcAttemptTimeout(String value);
+
+    @TemplateParameter.Text(
+        order = 13,
+        optional = true,
+        description = "The Bigtable total timeout for an RPC",
+        helpText = "How many milliseconds will pass before a DEADLINE_EXCEEDED on the total operation")
+    String getBigtableRpcOperationTimeout();
+
+    void setBigtableRpcOperationTimeout(String value);
   }
 
   /**
@@ -127,13 +173,36 @@ public class BigQueryToBigtable {
 
     BigQueryToBigtableOptions options =
         PipelineOptionsFactory.fromArgs(args).withValidation().as(BigQueryToBigtableOptions.class);
-    CloudBigtableTableConfiguration bigtableTableConfig =
+    CloudBigtableTableConfiguration.Builder builderBigtableTableConfig =
         new CloudBigtableTableConfiguration.Builder()
             .withProjectId(options.getBigtableWriteProjectId())
             .withInstanceId(options.getBigtableWriteInstanceId())
             .withAppProfileId(options.getBigtableWriteAppProfile())
-            .withTableId(options.getBigtableWriteTableId())
-            .build();
+            .withConfiguration(BigtableOptionsFactory.INITIAL_ELAPSED_BACKOFF_MILLIS_KEY, "100")
+            .withConfiguration(BigtableOptionsFactory.MAX_ELAPSED_BACKOFF_MILLIS_KEY, "600000")
+            .withTableId(options.getBigtableWriteTableId());
+
+    if (options.getBigtableLatencyMsTarget() != null) {
+      builderBigtableTableConfig
+          .withConfiguration(BigtableOptionsFactory.BIGTABLE_BUFFERED_MUTATOR_ENABLE_THROTTLING, "true")
+          .withConfiguration(BigtableOptionsFactory.BIGTABLE_BUFFERED_MUTATOR_THROTTLING_THRESHOLD_MILLIS, options.getBigtableLatencyMsTarget());
+    }
+    if (options.getBigtableMaxRowKeyCount() != null) {
+      builderBigtableTableConfig.withConfiguration(BigtableOptionsFactory.BIGTABLE_BULK_MAX_ROW_KEY_COUNT, options.getBigtableMaxRowKeyCount());
+    }
+    if (options.getBigtableBulkMaxRequestSizeBytes() != null) {
+      builderBigtableTableConfig.withConfiguration(BigtableOptionsFactory.BIGTABLE_BULK_MAX_REQUEST_SIZE_BYTES, options.getBigtableBulkMaxRequestSizeBytes());
+    }
+    if (options.getBigtableRpcOperationTimeout() != null) {
+      builderBigtableTableConfig.withConfiguration(BigtableOptionsFactory.BIGTABLE_RPC_TIMEOUT_MS_KEY,
+          options.getBigtableRpcOperationTimeout());
+    }
+    if (options.getBigtableRpcAttemptTimeout() != null) {
+      builderBigtableTableConfig.withConfiguration(BigtableOptionsFactory.BIGTABLE_RPC_ATTEMPT_TIMEOUT_MS_KEY,
+          options.getBigtableRpcAttemptTimeout());
+    }
+    CloudBigtableTableConfiguration bigtableTableConfig = builderBigtableTableConfig.build();
+
 
     Pipeline pipeline = Pipeline.create(options);
 
